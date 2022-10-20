@@ -1,0 +1,83 @@
+---
+title: "STAT628 M2"
+author: "Yizhe Ge yge43@wisc.edu"
+date: "2022/9/27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## a.Read data from bodyFat.csv
+```{r,warning=FALSE}
+body<-read.csv("bodyFat.csv")
+head(body)
+summary(body)
+```
+
+## b.Data Cleaning
+```{r}
+boxplot(body$BODYFAT)
+body[body$BODYFAT==0,] #IDNO=182 exist problem.
+```
+```{r}
+boxplot(body$WEIGHT)
+body[body$WEIGHT>300,] #IDNO=39 exist problem.
+
+```
+```{r}
+boxplot(body$HEIGHT)
+body[body$HEIGHT<50,] #IDNO=42 exist problem.
+body[body$IDNO[c(182,39,42)],]
+```
+
+Based on the body dat calculation. I find some points are away from the matching line.
+```{r}
+Siri<-495/body$DENSITY-450
+plot(body$BODYFAT, Siri, main="Siri", xlab="Bodyfat", ylab="body fat calculate")
+identify(body$BODYFAT, Siri)
+#Based on the plot, I notice the ID=48,76,96 may exists problem.
+body[body$IDNO[c(48,76,96)],]
+
+```
+Then I want to delete this unusual point, and build a model. 
+
+```{r}
+body1<-body[-c(39,42,48,76,96,182),]
+head(body1)
+dim(body1)
+```
+```{r}
+body1<-body1[ , -which(colnames(body1) %in% c("ADIPOSITY"))]
+summary(body1)
+full.model <- lm(BODYFAT~AGE+WEIGHT+HEIGHT+NECK+CHEST+ABDOMEN+HIP+THIGH+KNEE+ANKLE+BICEPS+FOREARM+WRIST, data = body1)
+summary(full.model)
+
+step.model1 <- stepAIC(full.model, direction = "both", trace=FALSE)
+summary(step.model1)
+vif(step.model1)
+
+opt.model <- lm(BODYFAT~AGE+HEIGHT+CHEST+ABDOMEN+BICEPS+WRIST, data = body1)
+summary(opt.model)
+
+
+red.model <- lm(BODYFAT~AGE+HEIGHT+CHEST+ABDOMEN+WRIST, data=body1)
+summary(red.model)
+plot(red.model)
+vif(red.model)
+
+red.model1 <- lm(BODYFAT~0+ABDOMEN+WRIST, data=body1)
+summary(red.model1)
+
+plot(red.model1)
+```
+
+
+```{r}
+red.model2 <- lm(BODYFAT~0+ABDOMEN+HEIGHT, data=body1)
+summary(red.model2)
+plot(red.model2)
+```
+
+
